@@ -1,0 +1,4 @@
+{
+  "serverPort": 5000,
+  "dbUrl": "mongodb+srv://Aleks:GNKpAgsuTqI6RGDj@budget-tracker.ssnhq8f.mongodb.net/?retryWrites=true&w=majority&appName=budget-tracker"
+}
