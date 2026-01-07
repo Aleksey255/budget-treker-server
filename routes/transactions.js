@@ -1,5 +1,5 @@
 import express from 'express'
-import  Transaction  from '../models/Transaction.js'
+import Transaction from '../models/Transaction.js'
 
 export const routerTransactions = express.Router()
 
@@ -14,11 +14,11 @@ routerTransactions.get('/', async (req, res) => {
 
 routerTransactions.post('/', async (req, res) => {
   const transaction = new Transaction({
-    type: req.body.type,
-    amount: req.body.amount,
-    category: req.body.category,
-    description: req.body.description,
-    date: req.body.date || Date.now(),
+    type,
+    amount,
+    category,
+    description,
+    date: date || Date.now(),
   })
 
   try {
@@ -29,34 +29,49 @@ routerTransactions.post('/', async (req, res) => {
   }
 })
 
-routerTransactions.put('/:id', getTransaction, async (req, res) => {
-  if (req.body.type != null) {
-    res.transaction.type = req.body.type
+async function findTransaction(req, res, next) {
+  try {
+    const transaction = await Transaction.findById(req.params.id)
+    if (!transaction) {
+      return res.status(404).json({ message: 'Cannot find transaction' })
+    }
+    req.transaction = transaction
+    next()
+  } catch (err) {
+    return res.status(500).json({ message: err.message })
   }
-  if (req.body.amount != null) {
-    res.transaction.amount = req.body.amount
-  }
-  if (req.body.category != null) {
-    res.transaction.category = req.body.category
-  }
-  if (req.body.description != null) {
-    res.transaction.description = req.body.description
-  }
-  if (req.body.date != null) {
-    res.transaction.date = req.body.date
-  }
+}
+
+routerTransactions.put('/:id', findTransaction, async (req, res) => {
+  const updates = {}
+  const updatableFields = ['type', 'amount', 'category', 'description', 'date']
+
+  updatableFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field]
+    }
+  })
 
   try {
-    const updatedTransaction = await res.transaction.save()
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      req.transaction._id,
+      updates,
+      { new: true, runValidators: true }
+    )
     res.json(updatedTransaction)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
 
-routerTransactions.delete('/:id', getTransaction, async (req, res) => {
+routerTransactions.delete('/:id', async (req, res) => {
   try {
-    await res.transaction.remove()
+    const transaction = await Transaction.findByIdAndDelete(req.params.id)
+
+    if (!transaction) {
+      return res.status(404).json({ message: 'Cannot find transaction' })
+    }
+
     res.json({ message: 'Deleted Transaction' })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -68,92 +83,57 @@ routerTransactions.get('/reports', async (req, res) => {
   const start = startDate ? new Date(startDate) : new Date('2000-01-01')
   const end = endDate ? new Date(endDate) : new Date()
 
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return res.status(400).json({ message: 'Invalid date format' })
+  }
+
   try {
-    const incomeAggregation = await Transaction.aggregate([
+    // Объединённая агрегация: эффективнее, чем 4 отдельных запроса
+    const result = await Transaction.aggregate([
       {
         $match: {
-          type: 'income',
           date: { $gte: start, $lte: end },
         },
       },
       {
         $group: {
-          _id: '$category',
+          _id: { type: '$type', category: '$category' },
           total: { $sum: '$amount' },
-        },
-      },
-    ])
-
-    const expenseAggregation = await Transaction.aggregate([
-      {
-        $match: {
-          type: 'expense',
-          date: { $gte: start, $lte: end },
         },
       },
       {
         $group: {
-          _id: '$category',
-          total: { $sum: '$amount' },
+          _id: '$_id.type',
+          categories: {
+            $push: {
+              category: '$_id.category',
+              total: '$total',
+            },
+          },
+          totalAmount: { $sum: '$total' },
         },
       },
     ])
 
-    const incomeTotal = await Transaction.aggregate([
-      {
-        $match: {
-          type: 'income',
-          date: { $gte: start, $lte: end },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$amount' },
-        },
-      },
-    ])
+    const incomeData = result.find(r => r._id === 'income') || {
+      categories: [],
+      totalAmount: 0,
+    }
+    const expenseData = result.find(r => r._id === 'expense') || {
+      categories: [],
+      totalAmount: 0,
+    }
 
-    const expenseTotal = await Transaction.aggregate([
-      {
-        $match: {
-          type: 'expense',
-          date: { $gte: start, $lte: end },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$amount' },
-        },
-      },
-    ])
-
-    const balance = (incomeTotal[0]?.total || 0) - (expenseTotal[0]?.total || 0)
+    const balance = incomeData.totalAmount - expenseData.totalAmount
 
     res.json({
-      income: incomeAggregation,
-      expenses: expenseAggregation,
-      incomeTotal: incomeTotal[0]?.total || 0,
-      expenseTotal: expenseTotal[0]?.total || 0,
+      income: incomeData.categories,
+      expenses: expenseData.categories,
+      incomeTotal: incomeData.totalAmount,
+      expenseTotal: expenseData.totalAmount,
       balance,
     })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
-
-async function getTransaction(req, res, next) {
-  let transaction
-  try {
-    transaction = await Transaction.findById(req.params.id)
-    if (transaction == null) {
-      return res.status(404).json({ message: 'Cannot find transaction' })
-    }
-  } catch (err) {
-    return res.status(500).json({ message: err.message })
-  }
-
-  res.transaction = transaction
-  next()
-}

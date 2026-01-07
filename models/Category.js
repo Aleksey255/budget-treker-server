@@ -1,6 +1,6 @@
-import { Schema, model} from 'mongoose'
+import { Schema, model } from 'mongoose'
 
- const CategorySchema = new Schema({
+const CategorySchema = new Schema({
   name: {
     type: String,
     required: true,
