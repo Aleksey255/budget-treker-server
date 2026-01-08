@@ -13,18 +13,35 @@ routerTransactions.get('/', async (req, res) => {
 })
 
 routerTransactions.post('/', async (req, res) => {
-  const transaction = new Transaction({
-    type,
-    amount,
-    category,
-    description,
-    date: date || Date.now(),
-  })
-
   try {
+    const { type, amount, categoryId, description, date } = req.body
+
+    // Валидация обязательных полей
+    if (!type || !amount || !categoryId) {
+      return res
+        .status(400)
+        .json({ message: 'Тип, сумма и категория обязательны' })
+    }
+
+    // Проверка типа
+    if (!['income', 'expense'].includes(type)) {
+      return res
+        .status(400)
+        .json({ message: 'Тип должен быть "income" или "expense"' })
+    }
+
+    const transaction = new Transaction({
+      type,
+      amount: Number(amount),
+      categoryId, // ← сейчас это строка (ID категории)
+      description: description || '',
+      date: date ? new Date(date) : new Date(),
+    })
+
     const newTransaction = await transaction.save()
     res.status(201).json(newTransaction)
   } catch (err) {
+    console.error(err)
     res.status(400).json({ message: err.message })
   }
 })

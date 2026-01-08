@@ -10,7 +10,7 @@ export const TransactionSchema = new Schema({
     type: Number,
     required: true,
   },
-  category: {
+  categoryId: {
     type: String,
     required: true,
   },
