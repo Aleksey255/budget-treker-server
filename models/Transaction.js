@@ -14,9 +14,13 @@ export const TransactionSchema = new Schema({
     type: String,
     required: true,
   },
-  description: {
+  categoryName: {
     type: String,
     required: true,
+  },
+  description: {
+    type: String,
+    required: false,
   },
   date: {
     type: Date,

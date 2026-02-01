@@ -14,10 +14,11 @@ routerTransactions.get('/', async (req, res) => {
 
 routerTransactions.post('/', async (req, res) => {
   try {
-    const { type, amount, categoryId, description, date } = req.body
+    const { type, amount, categoryId, categoryName, description, date } =
+      req.body
 
     // Валидация обязательных полей
-    if (!type || !amount || !categoryId) {
+    if (!type || !amount || !categoryId || !categoryName) {
       return res
         .status(400)
         .json({ message: 'Тип, сумма и категория обязательны' })
@@ -34,6 +35,7 @@ routerTransactions.post('/', async (req, res) => {
       type,
       amount: Number(amount),
       categoryId, // ← сейчас это строка (ID категории)
+      categoryName: categoryName,
       description: description || '',
       date: date ? new Date(date) : new Date(),
     })
