@@ -1,5 +1,5 @@
 import { connect } from 'mongoose'
-import {config} from 'dotenv'
+import { config } from 'dotenv'
 
 config()
 
@@ -15,5 +15,3 @@ export const connectDB = async () => {
     process.exit(1)
   }
 }
-
-// module.exports = connectDB;

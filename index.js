@@ -15,8 +15,17 @@ app.use(bodyParser.json())
 app.use('/api/transactions', routerTransactions)
 app.use('/api/categories', routerCategories)
 
-const PORT = process.env.PORT || 5000
-
-app.listen(PORT, () => {
-  console.log('Server started on port ', PORT)
+// Проверка здоровья
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' })
 })
+
+// Экспорт для Render (не используем app.listen!)
+export default app
+export { connectDB }
+
+// const PORT = process.env.PORT || 5000
+
+// app.listen(PORT, () => {
+//   console.log('Server started on port ', PORT)
+// })
