@@ -8,18 +8,6 @@ export const routerAuth = express.Router()
 // Установи API Key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-await sgMail.send({
-  to: user.email,
-  from: process.env.SENDGRID_FROM_EMAIL,
-  subject: 'Сброс пароля',
-  html: `
-    <h2>Запрос на сброс пароля</h2>
-    <p>Чтобы сбросить пароль, перейдите по ссылке:</p>
-    <a href="${resetUrl}" target="_blank">${resetUrl}</a>
-    <p><small>Ссылка действует 15 минут.</small></p>
-  `,
-})
-
 // Регистрация
 routerAuth.post('/register', async (req, res) => {
   const { name, email, password } = req.body
