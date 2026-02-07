@@ -1,11 +1,14 @@
 import express from 'express'
+import { auth } from '../middleware/auth.js'
 import Category from '../models/Category.js'
 
 export const routerCategories = express.Router()
 
+routerCategories.use(auth) // ← все маршруты теперь защищены
+
 routerCategories.get('/', async (req, res) => {
   try {
-    const categories = await Category.find()
+    const categories = await Category.find({ user: req.user._id })
     res.json(categories)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -20,7 +23,10 @@ routerCategories.post('/', async (req, res) => {
       .json({ message: 'Name is required and must be a string' })
   }
 
-  const category = new Category({ name })
+  const category = new Category({
+    name,
+    user: req.user._id, // ← привязка к пользователю
+  })
 
   try {
     const newCategory = await category.save()
@@ -40,6 +46,9 @@ async function findCategory(req, res, next) {
     const category = await Category.findById(req.params.id)
     if (!category) {
       return res.status(404).json({ message: 'Cannot find category' })
+    }
+    if (category.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа' })
     }
     req.category = category
     next()
@@ -64,6 +73,9 @@ routerCategories.put('/:id', findCategory, async (req, res) => {
       { name },
       { new: true, runValidators: true }
     )
+    if (updatedCategory.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа к этой транзакции' })
+    }
     res.json(updatedCategory)
   } catch (err) {
     if (err.code === 11000) {
@@ -78,6 +90,9 @@ routerCategories.delete('/:id', async (req, res) => {
     const category = await Category.findByIdAndDelete(req.params.id)
     if (!category) {
       return res.status(404).json({ message: 'Cannot find category' })
+    }
+    if (category.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа к этой транзакции' })
     }
     res.json({ message: 'Deleted Category' })
   } catch (err) {

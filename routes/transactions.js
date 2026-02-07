@@ -1,11 +1,16 @@
 import express from 'express'
+import { auth } from '../middleware/auth.js'
 import Transaction from '../models/Transaction.js'
 
 export const routerTransactions = express.Router()
 
+routerTransactions.use(auth) // ← все маршруты теперь защищены
+
 routerTransactions.get('/', async (req, res) => {
   try {
-    const transactions = await Transaction.find().sort({ date: -1 })
+    const transactions = await Transaction.find({ user: req.user._id }).sort({
+      date: -1,
+    })
     res.json(transactions)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -38,6 +43,7 @@ routerTransactions.post('/', async (req, res) => {
       categoryName: categoryName,
       description: description || '',
       date: date ? new Date(date) : new Date(),
+      user: req.user._id, // ← привязка к пользователю
     })
 
     const newTransaction = await transaction.save()
@@ -53,6 +59,9 @@ async function findTransaction(req, res, next) {
     const transaction = await Transaction.findById(req.params.id)
     if (!transaction) {
       return res.status(404).json({ message: 'Cannot find transaction' })
+    }
+    if (transaction.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа' })
     }
     req.transaction = transaction
     next()
@@ -77,6 +86,9 @@ routerTransactions.put('/:id', findTransaction, async (req, res) => {
       updates,
       { new: true, runValidators: true }
     )
+    if (updatedTransaction.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа к этой транзакции' })
+    }
     res.json(updatedTransaction)
   } catch (err) {
     res.status(400).json({ message: err.message })
@@ -86,6 +98,10 @@ routerTransactions.put('/:id', findTransaction, async (req, res) => {
 routerTransactions.delete('/:id', async (req, res) => {
   try {
     const transaction = await Transaction.findByIdAndDelete(req.params.id)
+
+    if (transaction.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Нет доступа к этой транзакции' })
+    }
 
     if (!transaction) {
       return res.status(404).json({ message: 'Cannot find transaction' })

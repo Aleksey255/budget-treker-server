@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 import { connectDB } from './db.js'
+import { routerAuth } from './routes/auth.js'
 import { routerTransactions } from './routes/transactions.js'
 import { routerCategories } from './routes/categories.js'
 
@@ -12,6 +13,7 @@ connectDB()
 app.use(cors())
 app.use(bodyParser.json())
 
+app.use('/api/auth', routerAuth)
 app.use('/api/transactions', routerTransactions)
 app.use('/api/categories', routerCategories)
 
