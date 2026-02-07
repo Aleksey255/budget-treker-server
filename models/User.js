@@ -1,5 +1,12 @@
 import { Schema, model } from 'mongoose'
 
+// export interface IUser extends Document {
+//   email: string
+//   password: string
+//   name: string
+//   comparePassword(candidatePassword: string): Promise<boolean>
+// }
+
 const UserSchema = new Schema(
   {
     name: {

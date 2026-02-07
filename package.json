@@ -11,6 +11,7 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "config": "^4.1.1",
