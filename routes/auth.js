@@ -8,6 +8,9 @@ export const routerAuth = express.Router()
 // Установи API Key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
+// sgMail.setDataResidency('eu');
+// uncomment the above line if you are sending mail using a regional EU subuser
+
 // Регистрация
 routerAuth.post('/register', async (req, res) => {
   const { name, email, password } = req.body
@@ -134,17 +137,25 @@ routerAuth.post('/forgot-password', async (req, res) => {
     const resetUrl = `${process.env.VITE_API_BASE_URL}/reset-password?token=${resetToken}`
 
     // Отправка через SendGrid
-    await sgMail.send({
-      to: user.email,
-      from: process.env.SENDGRID_FROM_EMAIL,
-      subject: 'Сброс пароля',
-      html: `
+    await sgMail
+      .send({
+        to: user.email,
+        from: process.env.SENDGRID_FROM_EMAIL,
+        subject: 'Сброс пароля',
+        text: 'Сброс пароля',
+        html: `
         <h2>Запрос на сброс пароля</h2>
         <p>Чтобы изменить пароль, перейдите по ссылке:</p>
         <a href="${resetUrl}" target="_blank">Сбросить пароль</a>
         <p><small>Ссылка действует 15 минут.</small></p>
       `,
-    })
+      })
+      .then(() => {
+        console.log('Email sent')
+      })
+      .catch(error => {
+        console.error(error)
+      })
 
     res.json({ message: 'Если аккаунт существует, письмо отправлено' })
   } catch (err) {

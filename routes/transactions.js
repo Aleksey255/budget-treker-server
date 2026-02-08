@@ -127,12 +127,13 @@ routerTransactions.get('/reports', async (req, res) => {
     const result = await Transaction.aggregate([
       {
         $match: {
+          user: req.user._id,
           date: { $gte: start, $lte: end },
         },
       },
       {
         $group: {
-          _id: { type: '$type', category: '$category' },
+          _id: { type: '$type', category: '$categoryName' },
           total: { $sum: '$amount' },
         },
       },
