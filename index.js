@@ -17,7 +17,15 @@ const app = express()
 
 connectDB()
 
-app.use(cors())
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173', // dev
+      'https://budget-treker.vercel.app', // prod
+    ],
+    credentials: true, // если используешь cookies
+  })
+)
 app.use(bodyParser.json())
 
 app.use('/api/auth', routerAuth)
