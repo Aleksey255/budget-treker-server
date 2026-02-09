@@ -35,10 +35,10 @@ const distPath = join(__dirname, '../client/dist')
 app.use(express.static(distPath))
 
 // ✅ Все остальные маршруты — отдаём index.html (для SPA)
-// app.get('*', (req, res) => {
-//   res.sendFile(join(distPath, 'index.html'))
-// })
 
+app.get(/^(?!\/api).*/i, (req, res) => {
+  res.sendFile(join(distPath, 'index.html'))
+})
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
