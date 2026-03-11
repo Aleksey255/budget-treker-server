@@ -6,13 +6,6 @@ import { routerAuth } from './routes/auth.js'
 import { routerTransactions } from './routes/transactions.js'
 import { routerCategories } from './routes/categories.js'
 
-// 🔁 Получаем __dirname в ES-модулях
-// import { fileURLToPath } from 'url'
-// import { dirname, join } from 'path'
-
-// const __filename = fileURLToPath(import.meta.url)
-// const __dirname = dirname(__filename)
-
 const app = express()
 
 connectDB()
@@ -34,11 +27,11 @@ app.use('/api/categories', routerCategories)
 
 // Проверка здоровья
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' })
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html') // Предполагается, что у вас есть файл index.html в корневой директории
+  res.sendFile(__dirname + '/index.html')
 })
 
 // Middleware для перенаправления всех необработанных маршрутов на корневой маршрут
@@ -46,16 +39,6 @@ app.use((req, res) => {
   res.redirect('/')
 })
 
-// ✅ Обслуживание статики (если фронтенд собран в client/dist)
-// const distPath = join(__dirname, '../client/dist')
-
-// app.use(express.static(distPath))
-
-// ✅ Все остальные маршруты — отдаём index.html (для SPA)
-
-// app.get('*', (req, res) => {
-//   res.sendFile(join(distPath, 'index.html'))
-// })
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
